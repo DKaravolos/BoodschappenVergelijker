@@ -24,6 +24,3 @@ build/
 # Claude agent worktrees (transient)
 .claude/worktrees/
 .claude/settings.local.json
-
-
-./.claude/worktrees

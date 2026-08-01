@@ -160,9 +160,18 @@
 **Description:** Implement Jumbo scraper (httpx against Jumbo API). Includes Jumbo Extra's Kaart loyalty price.
 
 **Acceptance criteria:**
-- [ ] `backend/scrapers/jumbo.py` implements the same `ScrapedItem` interface as AH
-- [ ] POST /scrape with `?supermarket=jumbo` stores Jumbo data
-- [ ] Loyalty prices captured when present
+- [x] `backend/scrapers/jumbo.py` implements the same `ScrapedItem` interface as AH
+- [ ] POST /scrape with `?supermarket=jumbo` stores Jumbo data — pending Task 6 (scrape wiring)
+- [x] Loyalty prices captured when present — see note
+
+**Notes:** Uses the unofficial mobile API (`mobileapi.jumbo.com/v17/search`, no
+auth). Prices come as integer cents. Jumbo's shelf promotions are all-shopper
+sales, so a `promotionalPrice` maps to `sale_price` (not loyalty); the classic
+search endpoint exposes no clean Extra's-card-only unit price, so `loyalty_price`
+stays None — reasoning documented in the module. Covered by mocked-transport
+unit tests in `backend/tests/test_scrapers.py`. Not live-validated: this
+environment's egress policy blocks `mobileapi.jumbo.com` (403), same as it now
+blocks `api.ah.nl`.
 
 **Files likely touched:**
 - `backend/scrapers/jumbo.py`
@@ -177,11 +186,21 @@
 **Description:** Implement Vomar scraper. Attempt httpx first; fall back to Playwright if the site requires JS rendering. No loyalty pricing.
 
 **Acceptance criteria:**
-- [ ] `backend/scrapers/vomar.py` returns `ScrapedItem` list with `loyalty_price = None`
-- [ ] POST /scrape includes Vomar data
+- [x] `backend/scrapers/vomar.py` returns `ScrapedItem` list with `loyalty_price = None`
+- [ ] POST /scrape includes Vomar data — pending Task 6 (scrape wiring)
+
+**Notes:** httpx (no Playwright needed for the JSON path). Vomar and Dekamarkt are
+both Detailresult Groep webshops on a shared platform, so the fetch + mapping live
+in `backend/scrapers/detailresult.py` and each store module just pins its config.
+Neither chain has a loyalty programme, so `loyalty_price` is always None and folder
+promotions map to `sale_price`. The Detailresult endpoint path/field names are a
+best-effort reconstruction (isolated in one place, defensive multi-casing parser)
+and need one live run to confirm — this environment blocks `www.vomar.nl` (403).
+Mapping covered by unit tests in `backend/tests/test_scrapers.py`.
 
 **Files likely touched:**
 - `backend/scrapers/vomar.py`
+- `backend/scrapers/detailresult.py`
 
 **Dependencies:** Task 6
 **Estimated scope:** Small–Medium (Medium if Playwright needed)
@@ -192,12 +211,19 @@
 **Description:** Implement Dekamarkt scraper. Attempt httpx first; fall back to Playwright if needed. No loyalty pricing.
 
 **Acceptance criteria:**
-- [ ] `backend/scrapers/dekamarkt.py` returns `ScrapedItem` list with `loyalty_price = None`
-- [ ] POST /scrape without params runs all 4 supermarkets
-- [ ] One scraper failing does not abort the others; `scrape_runs.status = 'partial'`
+- [x] `backend/scrapers/dekamarkt.py` returns `ScrapedItem` list with `loyalty_price = None`
+- [ ] POST /scrape without params runs all 4 supermarkets — pending Task 6 (scrape wiring)
+- [ ] One scraper failing does not abort the others; `scrape_runs.status = 'partial'` — pending scrape_service
+
+**Notes:** Shares the Detailresult platform helper with Vomar (see Task 9 notes);
+`dekamarkt.py` only pins its store config. Same reconstruction caveat and
+network-block (`www.dekamarkt.nl` 403) apply. Each scraper raises `ScraperError`
+on HTTP/transport failure, so the per-supermarket partial-failure handling can be
+implemented cleanly in the scrape_service once Task 6 lands.
 
 **Files likely touched:**
 - `backend/scrapers/dekamarkt.py`
+- `backend/scrapers/detailresult.py`
 - `backend/scrape_service.py`
 
 **Dependencies:** Task 8

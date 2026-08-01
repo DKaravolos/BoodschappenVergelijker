@@ -8,6 +8,7 @@ import type {
   Supermarket,
   SupermarketStatus,
 } from '../types'
+import { demoApi } from '../demo/client'
 
 const BASE = '/api'
 
@@ -30,7 +31,7 @@ function query(params: Record<string, string | undefined>): string {
   return `?${new URLSearchParams(entries).toString()}`
 }
 
-export const api = {
+const realApi = {
   getProducts(q?: string, brand?: string): Promise<ProductComparison[]> {
     return request(`/products${query({ q, brand })}`)
   },
@@ -63,3 +64,7 @@ export const api = {
     return request('/scrape/status')
   },
 }
+
+// The standalone demo build (VITE_DEMO=1) serves embedded fake data with no
+// backend; normal builds hit the real API.
+export const api = import.meta.env.VITE_DEMO ? demoApi : realApi

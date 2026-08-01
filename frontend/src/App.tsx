@@ -53,7 +53,13 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="header-top">
-          <h1>BoodschappenApp</h1>
+          <div className="wordmark">
+            <span className="mark" aria-hidden="true">€</span>
+            <div>
+              <h1>Boodschappen</h1>
+              <p className="tagline">Vegetarische vervangers · 4 supermarkten</p>
+            </div>
+          </div>
           <RefreshButton busy={scraping} onClick={handleRefresh} />
         </div>
         <ScrapeStatus statuses={status.data ?? []} />

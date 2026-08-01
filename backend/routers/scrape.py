@@ -2,7 +2,8 @@ from fastapi import APIRouter
 
 from backend import queries
 from backend.database import get_db
-from backend.models import ScrapeResult, SupermarketStatus
+from backend.models import ScrapeResult, Supermarket, SupermarketStatus
+from backend.scrape_service import run_scrape
 
 router = APIRouter(tags=["scrape"])
 
@@ -15,15 +16,12 @@ async def scrape_status():
 
 
 @router.post("/scrape", response_model=ScrapeResult)
-async def scrape():
-    """Trigger a Scrape and report per-Supermarket status.
+async def scrape(supermarket: Supermarket | None = None):
+    """Run the scraper(s) and persist results; report per-Supermarket status.
 
-    NOTE: the scraper-to-database wiring (running the four scrapers, product
-    matching, writing Listings + Price Snapshots) is Task 6 and not yet in
-    place. Until then this endpoint returns the current per-Supermarket status
-    so the refresh flow, freshness timestamps, and failure indicators in the UI
-    are fully functional against real data; it does not fabricate snapshots.
+    Without ``supermarket`` all four run; a single scraper failing does not abort
+    the others (``status`` becomes 'partial'). Scraper failures are recorded in
+    ``scrape_runs`` and returned in the statuses -- the endpoint still responds
+    200 so the UI can surface the failure without treating it as a request error.
     """
-    with get_db() as conn:
-        statuses = queries.get_scrape_status(conn)
-    return ScrapeResult(status="ok", statuses=statuses)
+    return await run_scrape(supermarket)

@@ -123,7 +123,16 @@ def test_scrape_status_reports_freshness_and_health(client):
     assert statuses["dekamarkt"]["status"] is None
 
 
-def test_scrape_returns_status(client):
+def test_scrape_returns_status(client, monkeypatch):
+    # Mock the scrapers so POST /scrape never touches the network.
+    from backend.scrapers import ah, dekamarkt, jumbo, vomar
+
+    async def empty():
+        return []
+
+    for module in (ah, jumbo, vomar, dekamarkt):
+        monkeypatch.setattr(module, "scrape", empty)
+
     body = client.post("/scrape").json()
-    assert body["status"] == "ok"
+    assert body["status"] == "completed"
     assert len(body["statuses"]) == 4

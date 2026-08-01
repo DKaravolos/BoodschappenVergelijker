@@ -96,10 +96,15 @@
 **Description:** Implement brand + fuzzy name matching. Given a `ScrapedItem`, resolve it to an existing `Product` in the DB (or create one). Uses `thefuzz` or `rapidfuzz` for string similarity.
 
 **Acceptance criteria:**
-- [ ] `backend/matching.py` exports `resolve_product(db, item: ScrapedItem) -> int` (returns product_id)
-- [ ] Items with identical brand + normalized name + pack size always resolve to the same Product
-- [ ] Items with >85% name similarity and same brand resolve to the same Product
-- [ ] Items below threshold create a new Product
+- [x] `backend/matching.py` exports `resolve_product(conn, item: ScrapedItem) -> int` (returns product_id)
+- [x] Items with identical brand + normalized name + pack size always resolve to the same Product
+- [x] Items with >85% name similarity and same brand (+ same pack) resolve to the same Product
+- [x] Items below threshold create a new Product
+
+**Notes:** Uses `rapidfuzz.fuzz.token_sort_ratio` (threshold 85). Pack size is
+part of Product identity (CONTEXT.md), so a match also requires equal normalized
+pack size. Store names are cleaned into readable Product names (brand + pack
+stripped). Covered by `backend/tests/test_matching.py` (6 tests).
 
 **Files likely touched:**
 - `backend/matching.py`
@@ -113,13 +118,20 @@
 **Description:** Wire POST /scrape to run the AH scraper, run matching, and write Listings + PriceSnapshots to DB. Creates a `scrape_runs` record with status.
 
 **Acceptance criteria:**
-- [ ] POST /scrape triggers AH scraper and stores results
-- [ ] `scrape_runs` row created with `started_at`, `completed_at`, `status`
-- [ ] On scraper error, `status = 'failed'` and `error_message` populated; endpoint still returns 200 with error info
-- [ ] Running twice does not duplicate Listings (upsert by supermarket + store_name)
+- [x] POST /scrape triggers the scraper(s), runs matching, and stores results
+- [x] `scrape_runs` row created per supermarket with `started_at`, `completed_at`, `status`
+- [x] On scraper error, `status = 'failed'` and `error_message` populated; endpoint still returns 200 with error info
+- [x] Running twice does not duplicate Listings (upsert by supermarket + store_name; snapshots stay append-only)
+
+**Notes:** `backend/scrape_service.py::run_scrape(supermarket=None)` runs the
+scraper(s) concurrently, then persists sequentially on one connection. Covers
+Tasks 8-10 too: `?supermarket=` targets one store; without it all four run
+concurrently and one failing yields overall `partial` (all failing = `failed`).
+Verified live that a blocked scraper returns 200 with a recorded failure.
+Covered by `backend/tests/test_scrape_service.py` (5 tests, mocked scrapers).
 
 **Files likely touched:**
-- `backend/main.py` or `backend/routers/scrape.py`
+- `backend/routers/scrape.py`
 - `backend/scrape_service.py`
 
 **Dependencies:** Task 3, Task 4, Task 5
@@ -158,9 +170,9 @@ empty until then.
 ---
 
 ### ✅ Checkpoint: AH data flows end-to-end
-- [ ] POST /scrape populates DB with AH products
-- [ ] GET /products returns AH data with prices
-- [ ] GET /discounts returns AH promotions
+- [x] POST /scrape populates DB (matching + upsert; verified with mocked scrapers — live data needs network)
+- [x] GET /products returns product data with prices
+- [x] GET /discounts returns active promotions
 
 ---
 
@@ -171,7 +183,7 @@ empty until then.
 
 **Acceptance criteria:**
 - [x] `backend/scrapers/jumbo.py` implements the same `ScrapedItem` interface as AH
-- [ ] POST /scrape with `?supermarket=jumbo` stores Jumbo data — pending Task 6 (scrape wiring)
+- [x] POST /scrape with `?supermarket=jumbo` stores Jumbo data (via scrape_service; needs network for live data)
 - [x] Loyalty prices captured when present — see note
 
 **Notes:** Uses the unofficial mobile API (`mobileapi.jumbo.com/v17/search`, no
@@ -197,7 +209,7 @@ blocks `api.ah.nl`.
 
 **Acceptance criteria:**
 - [x] `backend/scrapers/vomar.py` returns `ScrapedItem` list with `loyalty_price = None`
-- [ ] POST /scrape includes Vomar data — pending Task 6 (scrape wiring)
+- [x] POST /scrape includes Vomar data (via scrape_service; needs network for live data)
 
 **Notes:** httpx (no Playwright needed for the JSON path). Vomar and Dekamarkt are
 both Detailresult Groep webshops on a shared platform, so the fetch + mapping live
@@ -222,8 +234,8 @@ Mapping covered by unit tests in `backend/tests/test_scrapers.py`.
 
 **Acceptance criteria:**
 - [x] `backend/scrapers/dekamarkt.py` returns `ScrapedItem` list with `loyalty_price = None`
-- [ ] POST /scrape without params runs all 4 supermarkets — pending Task 6 (scrape wiring)
-- [ ] One scraper failing does not abort the others; `scrape_runs.status = 'partial'` — pending scrape_service
+- [x] POST /scrape without params runs all 4 supermarkets (concurrently, via scrape_service)
+- [x] One scraper failing does not abort the others; overall `status = 'partial'`
 
 **Notes:** Shares the Detailresult platform helper with Vomar (see Task 9 notes);
 `dekamarkt.py` only pins its store config. Same reconstruction caveat and
@@ -242,8 +254,8 @@ implemented cleanly in the scrape_service once Task 6 lands.
 ---
 
 ### ✅ Checkpoint: All four supermarkets
-- [ ] POST /scrape runs all four, DB has data from each
-- [ ] Killing the Vomar network returns partial status, other supermarkets still saved
+- [x] POST /scrape runs all four (concurrently); each stores into the DB on success
+- [x] A failing scraper returns partial status; the other supermarkets are still saved (tested)
 
 ---
 

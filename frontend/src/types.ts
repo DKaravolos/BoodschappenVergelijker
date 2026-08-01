@@ -59,3 +59,26 @@ export interface ScrapeResult {
   status: string
   statuses: SupermarketStatus[]
 }
+
+export interface BasketProduct {
+  product_id: number
+  brand: string
+  name: string
+  pack_size: string
+  prices: Record<Supermarket, number | null>
+  cheapest: Supermarket | null
+}
+
+export interface SupermarketTotal {
+  supermarket: Supermarket
+  total: number
+  available_count: number
+  complete: boolean
+}
+
+export interface Basket {
+  favourite_count: number
+  products: BasketProduct[]
+  totals: SupermarketTotal[]
+  cheapest_complete: Supermarket | null
+}

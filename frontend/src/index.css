@@ -1,44 +1,126 @@
 :root {
-  --text: #4b5563;
-  --text-h: #08060d;
-  --muted: #8b8b93;
-  --bg: #ffffff;
-  --panel: #f7f7f9;
-  --border: #e5e4e7;
-  --accent: #7c3aed;
-  --accent-bg: rgba(124, 58, 237, 0.1);
-  --sale: #d6285f;
-  --loyalty: #1d75d0;
-  --good: #16a34a;
-  --warn: #d97706;
-  --shadow: rgba(0, 0, 0, 0.08) 0 6px 16px -6px;
+  /* Neutrals: biased green-grey, not a default mid-grey. */
+  --bg: #f5f7f3;
+  --surface: #ffffff;
+  --surface-2: #eef1ea;
+  --ink: #15191a;
+  --ink-soft: #37413d;
+  --muted: #667069;
+  --border: #e0e5db;
+  --border-strong: #cdd4c6;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  /* App accent: emerald. Kept distinct from the "cheapest/savings" green. */
+  --accent: #157a5b;
+  --accent-ink: #0d5a41;
+  --accent-weak: rgba(21, 122, 91, 0.1);
 
-  font: 16px/1.5 var(--sans);
+  /* Semantic price colors. */
+  --sale: #d24b32; /* Aanbieding */
+  --loyalty: #2563c9; /* Bonus */
+  --good: #0f9b5a; /* cheapest / savings */
+  --good-weak: rgba(15, 155, 90, 0.12);
+  --warn: #bd7a08;
+
+  /* Real supermarket brand colors, used as column identity cues. */
+  --ah: #05a0e0;
+  --jumbo: #e9b100;
+  --vomar: #e2231a;
+  --dekamarkt: #e8630f;
+
+  --shadow-sm: 0 1px 2px rgba(18, 24, 21, 0.05);
+  --shadow: 0 1px 2px rgba(18, 24, 21, 0.04), 0 10px 30px -16px rgba(18, 24, 21, 0.28);
+
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  font: 15px/1.5 var(--sans);
   color-scheme: light dark;
-  color: var(--text);
+  color: var(--ink);
   background: var(--bg);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --muted: #6b7280;
-    --bg: #16171d;
-    --panel: #1f2028;
-    --border: #2e303a;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.16);
-    --sale: #f472b6;
-    --loyalty: #60a5fa;
-    --good: #4ade80;
-    --warn: #fbbf24;
-    --shadow: rgba(0, 0, 0, 0.4) 0 6px 16px -6px;
+    --bg: #12100c;
+    --surface: #1a1712;
+    --surface-2: #221e18;
+    --ink: #f2efe6;
+    --ink-soft: #d3cdbf;
+    --muted: #9a9284;
+    --border: #2c2820;
+    --border-strong: #3b362c;
+
+    --accent: #4cc79c;
+    --accent-ink: #6fd6b1;
+    --accent-weak: rgba(76, 199, 156, 0.14);
+
+    --sale: #f0765d;
+    --loyalty: #6ba4f5;
+    --good: #45c98a;
+    --good-weak: rgba(69, 201, 138, 0.16);
+    --warn: #e2a53a;
+
+    --ah: #38b6ee;
+    --jumbo: #f0c433;
+    --vomar: #f2564d;
+    --dekamarkt: #f2853f;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -16px rgba(0, 0, 0, 0.7);
   }
+}
+
+/* The viewer's explicit toggle wins over the OS preference, both directions. */
+:root[data-theme='light'] {
+  --bg: #f5f7f3;
+  --surface: #ffffff;
+  --surface-2: #eef1ea;
+  --ink: #15191a;
+  --ink-soft: #37413d;
+  --muted: #667069;
+  --border: #e0e5db;
+  --border-strong: #cdd4c6;
+  --accent: #157a5b;
+  --accent-ink: #0d5a41;
+  --accent-weak: rgba(21, 122, 91, 0.1);
+  --sale: #d24b32;
+  --loyalty: #2563c9;
+  --good: #0f9b5a;
+  --good-weak: rgba(15, 155, 90, 0.12);
+  --warn: #bd7a08;
+  --ah: #05a0e0;
+  --jumbo: #e9b100;
+  --vomar: #e2231a;
+  --dekamarkt: #e8630f;
+  --shadow-sm: 0 1px 2px rgba(18, 24, 21, 0.05);
+  --shadow: 0 1px 2px rgba(18, 24, 21, 0.04), 0 10px 30px -16px rgba(18, 24, 21, 0.28);
+}
+
+:root[data-theme='dark'] {
+  --bg: #12100c;
+  --surface: #1a1712;
+  --surface-2: #221e18;
+  --ink: #f2efe6;
+  --ink-soft: #d3cdbf;
+  --muted: #9a9284;
+  --border: #2c2820;
+  --border-strong: #3b362c;
+  --accent: #4cc79c;
+  --accent-ink: #6fd6b1;
+  --accent-weak: rgba(76, 199, 156, 0.14);
+  --sale: #f0765d;
+  --loyalty: #6ba4f5;
+  --good: #45c98a;
+  --good-weak: rgba(69, 201, 138, 0.16);
+  --warn: #e2a53a;
+  --ah: #38b6ee;
+  --jumbo: #f0c433;
+  --vomar: #f2564d;
+  --dekamarkt: #f2853f;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -16px rgba(0, 0, 0, 0.7);
 }
 
 * {
@@ -56,9 +138,10 @@ body {
 h1,
 h2,
 h3 {
-  color: var(--text-h);
-  font-weight: 600;
+  color: var(--ink);
+  font-weight: 650;
   margin: 0;
+  text-wrap: balance;
 }
 
 button {
@@ -68,4 +151,17 @@ button {
 
 input[type='search'] {
   font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

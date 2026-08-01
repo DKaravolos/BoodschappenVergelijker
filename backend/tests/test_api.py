@@ -112,6 +112,40 @@ def test_favourite_unknown_product_404(client):
     assert client.post("/favourites/999").status_code == 404
 
 
+def test_basket_empty_without_favourites(client):
+    basket = client.get("/basket").json()
+    assert basket["favourite_count"] == 0
+    assert basket["products"] == []
+    assert basket["cheapest_complete"] is None
+
+
+def test_basket_totals_and_cheapest_complete(client):
+    # Favourite both products. Product 1 (Vivera) is at AH (loyalty 1.99) and
+    # Jumbo (sale 1.99); Product 2 (Garden Gourmet) is at AH only (3.49).
+    client.post("/favourites/1")
+    client.post("/favourites/2")
+
+    basket = client.get("/basket").json()
+    assert basket["favourite_count"] == 2
+
+    totals = {t["supermarket"]: t for t in basket["totals"]}
+    # AH stocks both favourites -> complete, total 1.99 + 3.49.
+    assert totals["ah"]["complete"] is True
+    assert totals["ah"]["total"] == 5.48
+    # Jumbo stocks only product 1 -> incomplete.
+    assert totals["jumbo"]["complete"] is False
+    assert totals["jumbo"]["available_count"] == 1
+
+    # AH is the only Supermarket carrying the whole basket.
+    assert basket["cheapest_complete"] == "ah"
+
+    # Per-product best price uses the cheapest effective price at each store.
+    vivera = next(p for p in basket["products"] if p["product_id"] == 1)
+    assert vivera["prices"]["ah"] == 1.99
+    assert vivera["prices"]["jumbo"] == 1.99
+    assert vivera["prices"]["vomar"] is None
+
+
 def test_scrape_status_reports_freshness_and_health(client):
     statuses = {s["supermarket"]: s for s in client.get("/scrape/status").json()}
     assert set(statuses) == {"ah", "jumbo", "vomar", "dekamarkt"}

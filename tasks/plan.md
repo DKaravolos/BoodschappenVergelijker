@@ -127,5 +127,11 @@ _Verified in a real browser against seeded data (supermarket APIs blocked here).
 - [x] Refresh button triggers scrape; stale data displays last-scraped timestamp
 - [x] Favourites tab shows marked Products with full comparison table
 
-## Nice to Have (out of scope for now)
-- **Weekly basket total page** — sum of best prices across all Favourites per Supermarket, to decide where to do the full weekly shop
+## Nice to Have
+- [x] **Weekly basket total page** — sum of best prices across all Favourites per
+  Supermarket, to decide where to do the full weekly shop. Implemented as the
+  "Weekmand" tab: `GET /basket` (`queries.get_basket`) returns each Favourite's
+  best price per Supermarket, per-Supermarket totals, and the cheapest
+  Supermarket that stocks the *whole* basket (`cheapest_complete`). Frontend
+  `pages/Basket.tsx` renders the grid with the cheapest cell per row highlighted
+  and a winner headline. Covered by API tests; demo build supports it too.

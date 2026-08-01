@@ -4,17 +4,19 @@ import { api } from './api/client'
 import { useAsync } from './hooks/useAsync'
 import { RefreshButton } from './components/RefreshButton'
 import { ScrapeStatus } from './components/ScrapeStatus'
+import { Basket } from './pages/Basket'
 import { Compare } from './pages/Compare'
 import { Discounts } from './pages/Discounts'
 import { Favourites } from './pages/Favourites'
 import './App.css'
 
-type Tab = 'compare' | 'discounts' | 'favourites'
+type Tab = 'compare' | 'discounts' | 'favourites' | 'basket'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'compare', label: 'Vergelijken' },
   { id: 'discounts', label: 'Aanbiedingen' },
   { id: 'favourites', label: 'Favorieten' },
+  { id: 'basket', label: 'Weekmand' },
 ]
 
 function App() {
@@ -83,6 +85,7 @@ function App() {
             onToggleFavourite={handleToggleFavourite}
           />
         )}
+        {tab === 'basket' && <Basket refreshToken={refreshToken} />}
       </div>
     </div>
   )

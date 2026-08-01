@@ -2,6 +2,7 @@
 // dev proxy at /api (see vite.config.ts).
 
 import type {
+  Basket,
   Discount,
   ProductComparison,
   ScrapeResult,
@@ -46,6 +47,10 @@ const realApi = {
 
   getFavourites(): Promise<ProductComparison[]> {
     return request('/favourites')
+  },
+
+  getBasket(): Promise<Basket> {
+    return request('/basket')
   },
 
   addFavourite(productId: number): Promise<void> {

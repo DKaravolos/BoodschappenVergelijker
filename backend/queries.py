@@ -9,11 +9,14 @@ having to parse/compare ISO timestamps to find "latest".
 import sqlite3
 
 from backend.models import (
+    Basket,
+    BasketProduct,
     Discount,
     ProductComparison,
     SUPERMARKETS,
     SupermarketListing,
     SupermarketStatus,
+    SupermarketTotal,
 )
 
 # The latest snapshot per listing: the row whose id is the max for that listing.
@@ -249,3 +252,73 @@ def get_scrape_status(conn: sqlite3.Connection) -> list[SupermarketStatus]:
             )
         )
     return out
+
+
+def _effective_price(listing: SupermarketListing) -> float:
+    """The price a shopper actually pays: the lowest active price for a Listing."""
+    candidates = [listing.regular_price]
+    if listing.sale_price is not None:
+        candidates.append(listing.sale_price)
+    if listing.loyalty_price is not None:
+        candidates.append(listing.loyalty_price)
+    return min(candidates)
+
+
+def get_basket(conn: sqlite3.Connection) -> Basket:
+    """Weekly basket: each Favourite's best price per Supermarket, summed.
+
+    "Best price" for a (Favourite, Supermarket) pair is the cheapest effective
+    price among that Supermarket's Listings for the Product (covering variants).
+    A Supermarket's ``total`` sums only the Favourites it stocks; ``complete``
+    marks the ones that carry the entire basket, and ``cheapest_complete`` is the
+    cheapest of those -- the answer to "where do I do the whole weekly shop?".
+    """
+    favourites = get_favourites(conn)
+
+    products: list[BasketProduct] = []
+    running = {market: {"total": 0.0, "count": 0} for market in SUPERMARKETS}
+
+    for product in favourites:
+        prices: dict[str, float | None] = {market: None for market in SUPERMARKETS}
+        for market in SUPERMARKETS:
+            listed = [li for li in product.listings if li.supermarket == market]
+            if listed:
+                prices[market] = round(min(_effective_price(li) for li in listed), 2)
+
+        available = {m: p for m, p in prices.items() if p is not None}
+        cheapest = min(available, key=lambda m: available[m]) if available else None
+        for market, price in available.items():
+            running[market]["total"] += price
+            running[market]["count"] += 1
+
+        products.append(
+            BasketProduct(
+                product_id=product.id,
+                brand=product.brand,
+                name=product.name,
+                pack_size=product.pack_size,
+                prices=prices,
+                cheapest=cheapest,
+            )
+        )
+
+    favourite_count = len(favourites)
+    totals = [
+        SupermarketTotal(
+            supermarket=market,
+            total=round(running[market]["total"], 2),
+            available_count=running[market]["count"],
+            complete=favourite_count > 0 and running[market]["count"] == favourite_count,
+        )
+        for market in SUPERMARKETS
+    ]
+
+    complete = [t for t in totals if t.complete]
+    cheapest_complete = min(complete, key=lambda t: t.total).supermarket if complete else None
+
+    return Basket(
+        favourite_count=favourite_count,
+        products=products,
+        totals=totals,
+        cheapest_complete=cheapest_complete,
+    )

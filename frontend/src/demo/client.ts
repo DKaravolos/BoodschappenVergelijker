@@ -3,11 +3,16 @@
 // Favourites live in memory for the session (there is nothing to persist to).
 
 import type {
+  Basket,
+  BasketProduct,
   Discount,
   ProductComparison,
   ScrapeResult,
   Supermarket,
+  SupermarketListing,
+  SupermarketTotal,
 } from '../types'
+import { SUPERMARKETS } from '../types'
 import { DEMO_PRODUCTS, DEMO_STATUSES } from './data'
 
 const favourites = new Set<number>()
@@ -19,6 +24,71 @@ function round(value: number, dp = 2): number {
 
 function withFavourite(product: ProductComparison): ProductComparison {
   return { ...product, is_favourite: favourites.has(product.id) }
+}
+
+function effectivePrice(listing: SupermarketListing): number {
+  const active = [listing.regular_price]
+  if (listing.sale_price !== null) active.push(listing.sale_price)
+  if (listing.loyalty_price !== null) active.push(listing.loyalty_price)
+  return Math.min(...active)
+}
+
+// Mirrors backend queries.get_basket over the in-memory favourites.
+function buildBasket(): Basket {
+  const favs = DEMO_PRODUCTS.filter((p) => favourites.has(p.id))
+  const running: Record<Supermarket, { total: number; count: number }> = {
+    ah: { total: 0, count: 0 },
+    jumbo: { total: 0, count: 0 },
+    vomar: { total: 0, count: 0 },
+    dekamarkt: { total: 0, count: 0 },
+  }
+
+  const products: BasketProduct[] = favs.map((product) => {
+    const prices = {} as Record<Supermarket, number | null>
+    for (const market of SUPERMARKETS) {
+      const listed = product.listings.filter((l) => l.supermarket === market)
+      prices[market] = listed.length
+        ? round(Math.min(...listed.map(effectivePrice)))
+        : null
+    }
+    let cheapest: Supermarket | null = null
+    for (const market of SUPERMARKETS) {
+      const price = prices[market]
+      if (price === null) continue
+      running[market].total += price
+      running[market].count += 1
+      if (cheapest === null || price < (prices[cheapest] as number)) {
+        cheapest = market
+      }
+    }
+    return {
+      product_id: product.id,
+      brand: product.brand,
+      name: product.name,
+      pack_size: product.pack_size,
+      prices,
+      cheapest,
+    }
+  })
+
+  const totals: SupermarketTotal[] = SUPERMARKETS.map((market) => ({
+    supermarket: market,
+    total: round(running[market].total),
+    available_count: running[market].count,
+    complete: favs.length > 0 && running[market].count === favs.length,
+  }))
+
+  const complete = totals.filter((t) => t.complete)
+  const cheapest_complete = complete.length
+    ? complete.reduce((a, b) => (b.total < a.total ? b : a)).supermarket
+    : null
+
+  return {
+    favourite_count: favs.length,
+    products,
+    totals,
+    cheapest_complete,
+  }
 }
 
 // A tiny delay so loading states are exercised, like a real network call.
@@ -97,6 +167,10 @@ export const demoApi = {
   removeFavourite(productId: number): Promise<void> {
     favourites.delete(productId)
     return resolve<void>(undefined)
+  },
+
+  getBasket(): Promise<Basket> {
+    return resolve(buildBasket())
   },
 
   triggerScrape(): Promise<ScrapeResult> {

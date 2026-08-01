@@ -106,3 +106,37 @@ class ScrapeResult(BaseModel):
 
     status: str
     statuses: list[SupermarketStatus] = []
+
+
+class BasketProduct(BaseModel):
+    """One Favourite's best price at each Supermarket, for the weekly basket."""
+
+    product_id: int
+    brand: str
+    name: str
+    pack_size: str
+    prices: dict[Supermarket, float | None]  # None = not stocked there
+    cheapest: Supermarket | None = None  # which Supermarket is cheapest for it
+
+
+class SupermarketTotal(BaseModel):
+    """A Supermarket's running total across the Favourites basket."""
+
+    supermarket: Supermarket
+    total: float
+    available_count: int
+    complete: bool  # stocks every Favourite in the basket
+
+
+class Basket(BaseModel):
+    """The weekly basket: best price per Favourite per Supermarket, summed.
+
+    ``cheapest_complete`` is the cheapest Supermarket that stocks *every*
+    Favourite -- i.e. where the whole weekly shop can actually be done -- or
+    None when no single Supermarket carries them all.
+    """
+
+    favourite_count: int
+    products: list[BasketProduct] = []
+    totals: list[SupermarketTotal] = []
+    cheapest_complete: Supermarket | None = None

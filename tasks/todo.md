@@ -6,10 +6,10 @@
 **Description:** Set up the flat monorepo structure with root `package.json` (concurrently start script), backend Python project, and frontend Vite+React scaffold stubs.
 
 **Acceptance criteria:**
-- [ ] `npm run dev` starts both frontend (port 5173) and backend (port 8000) via concurrently
-- [ ] `uvicorn backend.main:app --reload` works standalone from root
-- [ ] `npm run dev:backend` and `npm run dev:frontend` work independently
-- [ ] `.gitignore` covers `__pycache__`, `*.pyc`, `node_modules`, `.venv`, `*.db`
+- [x] `npm run dev` starts both frontend (port 5173) and backend (port 8000) via concurrently
+- [x] `uvicorn backend.main:app --reload` works standalone from root
+- [x] `npm run dev:backend` and `npm run dev:frontend` work independently
+- [x] `.gitignore` covers `__pycache__`, `*.pyc`, `node_modules`, `.venv`, `*.db`
 
 **Files likely touched:**
 - `package.json`
@@ -28,9 +28,11 @@
 **Description:** Create the SQLite database module that initializes the schema on startup. Tables: `products`, `listings`, `price_snapshots`, `scrape_runs` (see schema in plan.md).
 
 **Acceptance criteria:**
-- [ ] `backend/database.py` exposes a `get_db()` function returning a connection
-- [ ] Schema is created on first startup via `CREATE TABLE IF NOT EXISTS`
-- [ ] Running the module twice does not error or duplicate schema
+- [x] `backend/database.py` exposes a `get_db()` function returning a connection
+- [x] Schema is created on first startup via `CREATE TABLE IF NOT EXISTS`
+- [x] Running the module twice does not error or duplicate schema
+
+**Notes:** `get_db()` sets `PRAGMA foreign_keys = ON` per connection; module also exposes `reset_db()`. Covered by `backend/tests/test_database.py` (5 tests).
 
 **Files likely touched:**
 - `backend/database.py`
@@ -44,10 +46,12 @@
 **Description:** Define Pydantic response models for Product, Listing, PriceSnapshot, ScrapeRun. Wire up the FastAPI app with placeholder routes returning empty responses.
 
 **Acceptance criteria:**
-- [ ] `GET /products` returns `[]` with correct schema
-- [ ] `GET /discounts` returns `[]` with correct schema
-- [ ] `POST /scrape` returns `{"status": "ok"}` placeholder
-- [ ] `GET /health` returns `{"status": "ok"}`
+- [x] `GET /products` returns `[]` with correct schema
+- [x] `GET /discounts` returns `[]` with correct schema
+- [x] `POST /scrape` returns `{"status": "ok"}` placeholder
+- [x] `GET /health` returns `{"status": "ok"}`
+
+**Notes:** `/discounts` temporarily typed `list[Product]` (placeholder) — Product carries no price fields, so give it a price-bearing response model when Task 7 implements discounts.
 
 **Files likely touched:**
 - `backend/main.py`
@@ -59,9 +63,9 @@
 ---
 
 ### ✅ Checkpoint: Foundation
-- [ ] `uvicorn backend.main:app --reload` runs, `/health` returns 200
-- [ ] SQLite file created with all 4 tables
-- [ ] `npm run dev` starts both processes
+- [x] `uvicorn backend.main:app --reload` runs, `/health` returns 200
+- [x] SQLite file created with all 4 tables
+- [x] `npm run dev` starts both processes
 
 ---
 
@@ -71,10 +75,12 @@
 **Description:** Implement the AH scraper using httpx against the unofficial AH API. Fetches vegetarian meat alternatives (category filter), returns a list of raw scraped items with store name, brand, regular price, sale price, and loyalty (Bonuskaart) price.
 
 **Acceptance criteria:**
-- [ ] `backend/scrapers/ah.py` exports an `async def scrape() -> list[ScrapedItem]` function
-- [ ] `ScrapedItem` includes: `supermarket`, `store_name`, `brand`, `pack_size`, `regular_price`, `sale_price | None`, `loyalty_price | None`
-- [ ] Running the scraper standalone returns at least 1 result
-- [ ] HTTP errors are caught and raised as a scraper-specific exception
+- [x] `backend/scrapers/ah.py` exports an `async def scrape() -> list[ScrapedItem]` function
+- [x] `ScrapedItem` includes: `supermarket`, `store_name`, `brand`, `pack_size`, `regular_price`, `sale_price | None`, `loyalty_price | None`
+- [x] Running the scraper standalone returns at least 1 result
+- [x] HTTP errors are caught and raised as a scraper-specific exception
+
+**Notes:** `ScrapedItem` is a frozen `@dataclass` in `scrapers/base.py` (internal ingest DTO, not a Pydantic API model). AH exposes no separate all-shoppers sale, so `sale_price` is always `None` and an active Bonus maps to `loyalty_price`. Live run: 92 items.
 
 **Files likely touched:**
 - `backend/scrapers/__init__.py`

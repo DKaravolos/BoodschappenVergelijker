@@ -78,9 +78,9 @@ CREATE TABLE scrape_runs (
 ### Task 3: Pydantic models + FastAPI app shell
 
 ### Checkpoint: Foundation
-- [ ] `uvicorn backend.main:app` starts without errors
-- [ ] SQLite file created with correct schema on startup
-- [ ] `npm run dev` starts both frontend and backend
+- [x] `uvicorn backend.main:app` starts without errors
+- [x] SQLite file created with correct schema on startup
+- [x] `npm run dev` starts both frontend and backend
 
 ---
 

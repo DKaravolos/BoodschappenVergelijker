@@ -20,3 +20,7 @@ build/
 # Env
 .env
 .env.local
+
+# Claude agent worktrees (transient)
+.claude/worktrees/
+.claude/settings.local.json

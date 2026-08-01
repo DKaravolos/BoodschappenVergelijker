@@ -377,9 +377,11 @@ token so both views stay in sync. Verified end-to-end in a browser.
 ---
 
 ### ✅ Checkpoint: Full app working end-to-end
-- [ ] Can search for "vivera", see prices across all 4 supermarkets
-- [ ] "Not available" shown where a supermarket doesn't carry the product
-- [ ] Discounts tab shows deals, filterable by supermarket
-- [ ] Refresh button works, timestamps visible
-- [ ] Partial scrape failure shows warning without breaking UI
-- [ ] Favourites tab shows marked Products with comparison table
+_Verified in a real browser against seeded data (this environment blocks the
+supermarket APIs, so a live scrape can't populate real data here)._
+- [x] Can search for "vivera", see prices across all 4 supermarkets
+- [x] "Niet beschikbaar" shown where a supermarket doesn't carry the product
+- [x] Discounts tab shows deals, filterable by supermarket
+- [x] Refresh button works, timestamps visible
+- [x] Partial scrape failure shows warning without breaking UI (⚠ mislukt)
+- [x] Favourites tab shows marked Products with comparison table

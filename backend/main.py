@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from backend.database import init_db
-from backend.models import Product
+from backend.routers import discounts, favourites, products, scrape
 
 
 @asynccontextmanager
@@ -14,22 +14,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="BoodschappenApp", lifespan=lifespan)
 
+app.include_router(products.router)
+app.include_router(discounts.router)
+app.include_router(favourites.router)
+app.include_router(scrape.router)
+
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
-
-
-@app.get("/products", response_model=list[Product])
-async def get_products():
-    return []
-
-
-@app.get("/discounts", response_model=list[Product])
-async def get_discounts():
-    return []
-
-
-@app.post("/scrape")
-async def scrape():
     return {"status": "ok"}

@@ -131,18 +131,28 @@
 **Description:** Implement the two main read endpoints. `/products` supports `q` (search) and `brand` query params. `/discounts` supports `supermarket` filter. Both return latest price per Listing.
 
 **Acceptance criteria:**
-- [ ] `GET /products?q=vivera` returns Products whose name contains "vivera" (case-insensitive)
-- [ ] `GET /products?brand=Vivera` filters by brand
-- [ ] Each Product in response includes its Listings, each with latest PriceSnapshot per supermarket
-- [ ] `GET /discounts?supermarket=ah` returns Listings where sale_price or loyalty_price is active (latest snapshot)
-- [ ] Missing Listings represented as `null` in the Product's supermarket entry
+- [x] `GET /products?q=vivera` returns Products whose name contains "vivera" (case-insensitive; also matches brand)
+- [x] `GET /products?brand=Vivera` filters by brand
+- [x] Each Product in response includes its Listings, each with latest PriceSnapshot per supermarket
+- [x] `GET /discounts?supermarket=ah` returns Listings where sale_price or loyalty_price is active (latest snapshot)
+- [x] Missing Listings represented as an empty per-supermarket cell (frontend renders "Niet beschikbaar")
+
+**Notes:** Implemented alongside the frontend so its API contract is real.
+Read logic lives in `backend/queries.py` (latest snapshot per listing = max id,
+append-only). Added price-bearing response models (`ProductComparison`,
+`SupermarketListing`, `Discount`, `SupermarketStatus`). Also added `GET /brands`
+(brand filter), `GET /favourites` + `POST/DELETE /favourites/{id}` (Task 15),
+and `GET /scrape/status` (Task 14). Covered by `backend/tests/test_api.py`
+(9 tests). Data population still needs Task 6 (scrape wiring); endpoints return
+empty until then.
 
 **Files likely touched:**
-- `backend/routers/products.py`
-- `backend/routers/discounts.py`
+- `backend/queries.py`
+- `backend/routers/products.py`, `discounts.py`, `favourites.py`, `scrape.py`
+- `backend/models.py`
 - `backend/main.py`
 
-**Dependencies:** Task 6
+**Dependencies:** Task 6 (for data; contract implemented independently)
 **Estimated scope:** Medium
 
 ---
@@ -243,9 +253,9 @@ implemented cleanly in the scrape_service once Task 6 lands.
 **Description:** Set up the React app with TypeScript, Tailwind (or plain CSS), and an API client that proxies to `localhost:8000`. Define TypeScript types mirroring backend Pydantic models.
 
 **Acceptance criteria:**
-- [ ] `frontend/src/api/client.ts` has typed functions for `getProducts`, `getDiscounts`, `triggerScrape`
-- [ ] Vite proxy forwards `/api/*` to `http://localhost:8000`
-- [ ] TypeScript types match backend response shapes
+- [x] `frontend/src/api/client.ts` has typed functions for `getProducts`, `getDiscounts`, `triggerScrape` (+ brands, favourites, scrape status)
+- [x] Vite proxy forwards `/api/*` to `http://localhost:8000` (prefix stripped)
+- [x] TypeScript types match backend response shapes (`frontend/src/types.ts`)
 
 **Files likely touched:**
 - `frontend/src/api/client.ts`
@@ -261,12 +271,16 @@ implemented cleanly in the scrape_service once Task 6 lands.
 **Description:** Main page with search bar, brand filter sidebar, and a comparison table showing Regular / Sale / Loyalty Price per supermarket. Variants from the same supermarket shown as sub-rows.
 
 **Acceptance criteria:**
-- [ ] Typing in search bar filters products (debounced, hits GET /products?q=)
-- [ ] Selecting a brand filters to that brand
-- [ ] Comparison table has columns: Product, AH, Jumbo, Vomar, Dekamarkt
-- [ ] Each supermarket cell shows Regular Price, Sale Price (if active), Loyalty Price (if active)
-- [ ] Missing Listings show "Not available"
-- [ ] Multiple Listings per supermarket shown as variants (sub-rows or grouped)
+- [x] Typing in search bar filters products (debounced 300ms, hits GET /products?q=)
+- [x] Selecting a brand filters to that brand
+- [x] Comparison table has columns: Product, AH, Jumbo, Vomar, Dekamarkt
+- [x] Each supermarket cell shows Regular Price, Sale Price (if active), Loyalty Price (if active)
+- [x] Missing Listings show "Niet beschikbaar"
+- [x] Multiple Listings per supermarket shown as variants (stacked in the cell)
+
+**Notes:** `useAsync`/`useDebounce` hooks + `AsyncBoundary` handle loading/empty/
+error states. `PriceCell` strikes the Regular Price when a deal is active and
+labels Sale ("Aanbieding") vs Loyalty ("Bonus"). Verified in a real browser.
 
 **Files likely touched:**
 - `frontend/src/pages/Compare.tsx`
@@ -283,10 +297,13 @@ implemented cleanly in the scrape_service once Task 6 lands.
 **Description:** Separate tab/page showing all active Discounts across supermarkets, filterable by supermarket.
 
 **Acceptance criteria:**
-- [ ] Discounts tab shows all Listings with active Sale or Loyalty price
-- [ ] Supermarket filter toggles (AH / Jumbo / Vomar / Dekamarkt)
-- [ ] Shows product name, brand, supermarket, Regular Price, discounted price, savings amount/percentage
-- [ ] Sorted by discount percentage descending by default
+- [x] Discounts tab shows all Listings with active Sale or Loyalty price
+- [x] Supermarket filter toggles (Alle / AH / Jumbo / Vomar / Dekamarkt)
+- [x] Shows product name, brand, supermarket, Regular Price, discounted price, savings amount/percentage
+- [x] Sorted by discount percentage descending by default (backend-sorted)
+
+**Notes:** Filter chips (`MarketToggle`) stay visible even when a filter yields
+no results, so the user is never trapped on an empty view.
 
 **Files likely touched:**
 - `frontend/src/pages/Discounts.tsx`
@@ -301,10 +318,14 @@ implemented cleanly in the scrape_service once Task 6 lands.
 **Description:** Refresh button triggers POST /scrape, shows loading state, and displays last-scraped timestamp per supermarket. Stale data flagged visually.
 
 **Acceptance criteria:**
-- [ ] Refresh button triggers scrape and shows spinner while running
-- [ ] After scrape, data refreshes without full page reload
-- [ ] Each supermarket column shows "Last updated: X" timestamp
-- [ ] If a supermarket's last scrape failed, column header shows warning indicator
+- [x] Refresh button triggers scrape and shows spinner while running
+- [x] After scrape, data refreshes without full page reload (shared `refreshToken`)
+- [x] Each supermarket shows a "bijgewerkt X" last-updated timestamp (header strip)
+- [x] If a supermarket's last scrape failed, the status strip shows a ⚠ warning
+
+**Notes:** Timestamps live in a header status strip spanning all tabs rather than
+per column. POST /scrape currently reports status only (data population is
+Task 6); the refresh flow, timestamps, and failure indicator are fully wired.
 
 **Files likely touched:**
 - `frontend/src/components/RefreshButton.tsx`
@@ -320,11 +341,16 @@ implemented cleanly in the scrape_service once Task 6 lands.
 **Description:** Add ability to mark/unmark Products as Favourites. Favourites tab shows the same comparison table as Compare but scoped to marked Products only. Favourites stored in SQLite `favourites` table.
 
 **Acceptance criteria:**
-- [ ] Star/heart toggle on each Product in Compare page adds/removes it from `favourites` table
-- [ ] `GET /favourites` returns favourite Products with full Listing and latest price data
-- [ ] `POST /favourites/{product_id}` and `DELETE /favourites/{product_id}` endpoints work
-- [ ] Favourites tab renders same comparison table as Compare, scoped to favourites
-- [ ] Empty state shown when no Favourites marked
+- [x] Star toggle on each Product in Compare page adds/removes it from `favourites` table
+- [x] `GET /favourites` returns favourite Products with full Listing and latest price data
+- [x] `POST /favourites/{product_id}` and `DELETE /favourites/{product_id}` endpoints work
+- [x] Favourites tab renders same comparison table as Compare, scoped to favourites
+- [x] Empty state shown when no Favourites marked
+
+**Notes:** `favourites` table already existed in the schema. `ComparisonTable`
+is reused by both Compare and Favourites. Add is idempotent (INSERT OR IGNORE);
+POST unknown product -> 404. Toggling on either tab bumps the shared refresh
+token so both views stay in sync. Verified end-to-end in a browser.
 
 **Files likely touched:**
 - `backend/routers/favourites.py`

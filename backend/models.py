@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 Supermarket = Literal["ah", "jumbo", "vomar", "dekamarkt"]
 
+SUPERMARKETS: tuple[Supermarket, ...] = ("ah", "jumbo", "vomar", "dekamarkt")
+
 
 class Product(BaseModel):
     id: int
@@ -36,3 +38,71 @@ class ScrapeRun(BaseModel):
     supermarket: Supermarket | None = None
     status: str
     error_message: str | None = None
+
+
+# --------------------------------------------------------------------------- #
+# API response models (read side)
+#
+# These are the shapes the frontend consumes. A ``ProductComparison`` bundles a
+# Product with its latest per-Listing price so the compare table can render a
+# Product row with one cell per Supermarket in a single request.
+# --------------------------------------------------------------------------- #
+
+
+class SupermarketListing(BaseModel):
+    """One Listing plus its latest Price Snapshot, for the compare table."""
+
+    listing_id: int
+    supermarket: Supermarket
+    store_name: str
+    store_url: str | None = None
+    scraped_at: str
+    regular_price: float
+    sale_price: float | None = None
+    loyalty_price: float | None = None
+
+
+class ProductComparison(BaseModel):
+    """A Product with every Supermarket Listing's current price snapshot."""
+
+    id: int
+    brand: str
+    name: str
+    pack_size: str
+    is_favourite: bool = False
+    listings: list[SupermarketListing] = []
+
+
+class Discount(BaseModel):
+    """A Listing whose latest snapshot has an active Sale or Loyalty price."""
+
+    listing_id: int
+    product_id: int
+    brand: str
+    name: str
+    pack_size: str
+    supermarket: Supermarket
+    store_name: str
+    scraped_at: str
+    regular_price: float
+    sale_price: float | None = None
+    loyalty_price: float | None = None
+    best_price: float
+    savings: float
+    savings_pct: float
+
+
+class SupermarketStatus(BaseModel):
+    """Freshness/health of the most recent Scrape for one Supermarket."""
+
+    supermarket: Supermarket
+    last_scraped_at: str | None = None
+    status: str | None = None
+    error_message: str | None = None
+
+
+class ScrapeResult(BaseModel):
+    """Outcome of a POST /scrape call, with per-Supermarket status."""
+
+    status: str
+    statuses: list[SupermarketStatus] = []
